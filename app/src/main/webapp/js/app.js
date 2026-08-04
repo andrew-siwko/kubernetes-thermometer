@@ -26,6 +26,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const customNameInput = document.getElementById('customNameInput');
     const cancelRenameBtn = document.getElementById('cancelRenameBtn');
     const saveRenameBtn = document.getElementById('saveRenameBtn');
+    const manageProbesBtn = document.getElementById('manageProbesBtn');
+    const manageProbesModal = document.getElementById('manageProbesModal');
+    const closeManageBtn = document.getElementById('closeManageBtn');
+    const manageProbesTableBody = document.getElementById('manageProbesTableBody');
+    const manageProbesMessage = document.getElementById('manageProbesMessage');
 
     // Initialize Chart
     function initChart() {
@@ -123,6 +128,80 @@ document.addEventListener('DOMContentLoaded', () => {
             probeSelect.value = currentVal;
         } else {
             probeSelect.value = 'ALL';
+        }
+    }
+
+    function renderManageProbesTable() {
+        manageProbesTableBody.innerHTML = '';
+        manageProbesMessage.textContent = '';
+
+        if (!probes.length) {
+            manageProbesMessage.textContent = 'No probes available to manage.';
+            return;
+        }
+
+        probes.forEach(p => {
+            const row = document.createElement('tr');
+            const ageSeconds = p.lastAgeSeconds != null ? p.lastAgeSeconds : null;
+            const ageText = ageSeconds == null ? 'Unknown' : formatAge(ageSeconds);
+
+            row.innerHTML = `
+                <td>${escapeHtml(p.model)}</td>
+                <td>${escapeHtml(p.id)}</td>
+                <td>
+                    <input type="text" class="probe-alias-input" data-model="${escapeHtml(p.model)}" data-id="${escapeHtml(p.id)}" value="${escapeHtml(p.customName || '')}" placeholder="Alias..." />
+                </td>
+                <td>${ageText}</td>
+                <td><button class="btn btn-primary btn-small save-alias-btn" data-model="${escapeHtml(p.model)}" data-id="${escapeHtml(p.id)}">Save</button></td>
+            `;
+
+            manageProbesTableBody.appendChild(row);
+        });
+
+        manageProbesTableBody.querySelectorAll('.save-alias-btn').forEach(btn => {
+            btn.addEventListener('click', async (event) => {
+                const model = event.target.dataset.model;
+                const id = event.target.dataset.id;
+                const input = manageProbesTableBody.querySelector(`input[data-model="${CSS.escape(model)}"][data-id="${CSS.escape(id)}"]`);
+                const newName = input ? input.value.trim() : '';
+                await saveProbeAlias(model, id, newName);
+            });
+        });
+    }
+
+    function escapeHtml(value) {
+        if (value == null) return '';
+        return value.replace(/[&<>"]+/g, function(match) {
+            const escape = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;'
+            };
+            return escape[match];
+        });
+    }
+
+    function formatAge(seconds) {
+        if (seconds < 60) return `${seconds}s ago`;
+        if (seconds < 3600) return `${Math.floor(seconds / 60)}m ${seconds % 60}s ago`;
+        return `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m ago`;
+    }
+
+    async function saveProbeAlias(model, id, customName) {
+        try {
+            const res = await fetch('api/probes/name', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ model, id, customName })
+            });
+            if (!res.ok) throw new Error('Failed to save alias');
+            await fetchProbes();
+            renderManageProbesTable();
+            manageProbesMessage.textContent = 'Alias saved successfully.';
+            setTimeout(() => manageProbesMessage.textContent = '', 2500);
+        } catch (err) {
+            manageProbesMessage.textContent = 'Error saving alias: ' + err.message;
         }
     }
 
@@ -289,6 +368,21 @@ document.addEventListener('DOMContentLoaded', () => {
             fetchReadings();
         } catch (err) {
             alert('Error saving probe name: ' + err.message);
+        }
+    });
+
+    manageProbesBtn.addEventListener('click', () => {
+        renderManageProbesTable();
+        manageProbesModal.classList.add('active');
+    });
+
+    closeManageBtn.addEventListener('click', () => {
+        manageProbesModal.classList.remove('active');
+    });
+
+    manageProbesModal.addEventListener('click', (event) => {
+        if (event.target === manageProbesModal) {
+            manageProbesModal.classList.remove('active');
         }
     });
 
