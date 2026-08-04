@@ -1,6 +1,5 @@
-FROM maven:3.9-eclipse-temurin-25 AS driver-fetch
-WORKDIR /tmp
-RUN mvn dependency:get -Dartifact=org.postgresql:postgresql:42.7.4:jar -Ddest=postgresql-42.7.4.jar
+FROM curlimages/curl:8.5.0 AS driver-fetch
+RUN curl -fSL https://repo1.maven.org/maven2/org/postgresql/postgresql/42.7.4/postgresql-42.7.4.jar -o /tmp/postgresql-42.7.4.jar
 
 FROM icr.io/appcafe/open-liberty:full-java25-openj9-ubi-minimal
 ARG BUILD_NUMBER=unknown
