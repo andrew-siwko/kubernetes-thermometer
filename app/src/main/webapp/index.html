@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kubernetes Thermometer - Live Probes</title>
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <!-- Chart.js & Date Adapter -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-brand">
+                <div class="brand-icon">🌡️</div>
+                <div class="brand-text">
+                    <h1>Kubernetes Thermometer</h1>
+                    <p class="subtitle">Live Sensor Telemetry Probe</p>
+                </div>
+            </div>
+            <div class="header-status">
+                <div class="status-indicator online" id="statusIndicator">
+                    <span class="dot"></span>
+                    <span id="statusText">Connected</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Controls Bar -->
+        <section class="controls-card">
+            <div class="control-group">
+                <label for="probeSelect">Probe / Sensor:</label>
+                <div class="select-wrapper">
+                    <select id="probeSelect">
+                        <option value="ALL">All Probes</option>
+                    </select>
+                </div>
+                <button id="renameBtn" class="btn btn-secondary" title="Rename Probe">
+                    ✏️ Rename Probe
+                </button>
+            </div>
+
+            <div class="control-group">
+                <label>Time Window:</label>
+                <div class="button-group" id="timeWindowBtns">
+                    <button class="btn btn-tab" data-window="15m">15m</button>
+                    <button class="btn btn-tab" data-window="30m">30m</button>
+                    <button class="btn btn-tab active" data-window="1h">1h</button>
+                    <button class="btn btn-tab" data-window="6h">6h</button>
+                    <button class="btn btn-tab" data-window="12h">12h</button>
+                    <button class="btn btn-tab" data-window="24h">24h</button>
+                    <button class="btn btn-tab" data-window="7d">7d</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Dashboard Content -->
+        <main class="dashboard-grid">
+            <!-- Metrics Cards -->
+            <div class="metrics-row">
+                <div class="metric-card current-temp">
+                    <div class="metric-label">Current Temperature</div>
+                    <div class="metric-value" id="currentTempDisplay">-- °F</div>
+                    <div class="metric-sub" id="currentTempSub">-- °C</div>
+                </div>
+
+                <div class="metric-card reading-age">
+                    <div class="metric-label">Last Reading Age</div>
+                    <div class="metric-valueHighlight" id="readingAgeDisplay">-- ago</div>
+                    <div class="metric-sub" id="lastTimestampDisplay">Updating...</div>
+                </div>
+
+                <div class="metric-card temp-range">
+                    <div class="metric-label">Window Temp Range</div>
+                    <div class="metric-value" id="tempRangeDisplay">-- °F - -- °F</div>
+                    <div class="metric-sub" id="readingCountDisplay">0 readings</div>
+                </div>
+            </div>
+
+            <!-- Chart Container -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h2 id="chartTitle">Temperature Trend (°F)</h2>
+                    <div class="live-badge" id="liveBadge">
+                        <span class="live-pulse"></span>
+                        <span id="liveAgeText">Last reading: --</span>
+                    </div>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="tempChart"></canvas>
+                </div>
+            </div>
+        </main>
+
+        <!-- Rename Modal -->
+        <div class="modal-overlay" id="renameModal">
+            <div class="modal-card">
+                <h3>Rename Probe</h3>
+                <p id="modalProbeSubtitle" class="modal-subtitle"></p>
+                <div class="form-group">
+                    <label for="customNameInput">Custom Alias / Name:</label>
+                    <input type="text" id="customNameInput" placeholder="e.g. Patio Weather Station" autofocus>
+                </div>
+                <div class="modal-actions">
+                    <button id="cancelRenameBtn" class="btn btn-secondary">Cancel</button>
+                    <button id="saveRenameBtn" class="btn btn-primary">Save Name</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>

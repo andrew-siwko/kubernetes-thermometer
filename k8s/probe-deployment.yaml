@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: probe-server
+  namespace: default
+  labels:
+    app: probe-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: probe-server
+  template:
+    metadata:
+      labels:
+        app: probe-server
+    spec:
+      initContainers:
+      - name: probe-app
+        image: kregistry.siwko.org:5000/probe-app:latest
+        imagePullPolicy: Always
+        command: ["sh", "-c", "cp /app/probe.war /config/apps/probe.war"]
+        volumeMounts:
+        - name: apps-volume
+          mountPath: /config/apps
+      containers:
+      - name: probe-server
+        image: kregistry.siwko.org:5000/probe-server:latest
+        imagePullPolicy: Always
+        env:
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: sdr433-role-credentials
+              key: username
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: sdr433-role-credentials
+              key: password
+        - name: PGHOST
+          value: "prod-postgres-rw"
+        - name: PGPORT
+          value: "5432"
+        - name: PGDATABASE
+          value: "sdr433"
+        - name: KEYSTORE_PASSWORD
+          value: "probeKeystorePass123!"
+        ports:
+        - containerPort: 9080
+          name: http
+        - containerPort: 9443
+          name: https
+        volumeMounts:
+        - name: apps-volume
+          mountPath: /config/apps
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: 9080
+          initialDelaySeconds: 15
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: 9080
+          initialDelaySeconds: 30
+          periodSeconds: 15
+      volumes:
+      - name: apps-volume
+        emptyDir: {}

@@ -1,0 +1,7 @@
+org\siwko\thermometer\model\ReadingPoint.class
+org\siwko\thermometer\api\ApplicationConfig.class
+org\siwko\thermometer\dao\ReadingDao$ParsedReading.class
+org\siwko\thermometer\dao\ReadingDao.class
+org\siwko\thermometer\model\ProbeInfo.class
+org\siwko\thermometer\api\ProbeResource$NameUpdateRequest.class
+org\siwko\thermometer\api\ProbeResource.class

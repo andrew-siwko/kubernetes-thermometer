@@ -1,0 +1,37 @@
+<server description="kubernetes-thermometer-probe">
+
+    <featureManager>
+        <feature>webProfile-10.0</feature>
+        <feature>restfulWS-3.0</feature>
+        <feature>jsonp-2.1</feature>
+        <feature>jsonb-3.0</feature>
+        <feature>jdbc-4.3</feature>
+        <feature>ssl-1.0</feature>
+        <feature>mpConfig-3.1</feature>
+        <feature>mpHealth-4.0</feature>
+    </featureManager>
+
+    <httpEndpoint id="defaultHttpEndpoint" httpPort="9080" httpsPort="9443" host="*"/>
+
+    <keyStore id="defaultKeyStore" password="${env.KEYSTORE_PASSWORD}"/>
+
+    <ssl id="defaultSSLConfig" keyStoreRef="defaultKeyStore" trustDefaultCerts="true"/>
+
+    <library id="postgresJDBCLib">
+        <fileset dir="${server.config.dir}/resources/postgresql" includes="*.jar"/>
+    </library>
+    
+    <jdbcDriver id="postgresDriver" libraryRef="postgresJDBCLib"/>
+
+    <dataSource id="sdr433DS" jndiName="jdbc/sdr433DS" jdbcDriverRef="postgresDriver">
+        <properties.postgresql
+            serverName="${env.PGHOST:prod-postgres-rw}"
+            portNumber="${env.PGPORT:5432}"
+            databaseName="${env.PGDATABASE:sdr433}"
+            user="${env.POSTGRES_USER}"
+            password="${env.POSTGRES_PASSWORD}"/>
+    </dataSource>
+
+    <webApplication id="probe" location="probe.war" contextRoot="/"/>
+
+</server>

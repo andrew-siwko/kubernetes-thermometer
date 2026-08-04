@@ -1,0 +1,33 @@
+pipeline {
+    agent { label 'docker-builder' }
+
+    options {
+        disableConcurrentBuilds()
+    }
+
+    environment {
+        REGISTRY = 'kregistry.siwko.org:5000'
+        IMAGE = "${REGISTRY}/probe-app"
+        IMAGE_TAG = "${env.BUILD_NUMBER}"
+    }
+
+    stages {
+        stage('Build App Image') {
+            steps {
+                sh "docker build --provenance=false --sbom=false --build-arg BUILD_NUMBER=${IMAGE_TAG} -f app/Dockerfile -t ${IMAGE}:${IMAGE_TAG} -t ${IMAGE}:latest app"
+            }
+        }
+        stage('Push App Image') {
+            steps {
+                sh "docker push ${IMAGE}:${IMAGE_TAG}"
+                sh "docker push ${IMAGE}:latest"
+            }
+        }
+        stage('Deploy App to OpenLiberty Server') {
+            steps {
+                sh "kubectl set image deployment/probe-server probe-app=${IMAGE}:${IMAGE_TAG} -n default"
+                sh "kubectl rollout status deployment/probe-server -n default --timeout=180s"
+            }
+        }
+    }
+}
