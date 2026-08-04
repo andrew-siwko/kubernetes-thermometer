@@ -7,6 +7,8 @@ import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonReader;
 import jakarta.json.JsonNumber;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
 import org.siwko.thermometer.model.ProbeInfo;
 import org.siwko.thermometer.model.ReadingPoint;
 
@@ -26,9 +28,25 @@ public class ReadingDao {
     @Resource(lookup = "jdbc/sdr433DS")
     private DataSource dataSource;
 
+    private synchronized DataSource getDataSource() {
+        if (dataSource != null) {
+            return dataSource;
+        }
+        try {
+            InitialContext ctx = new InitialContext();
+            dataSource = (DataSource) ctx.lookup("jdbc/sdr433DS");
+            LOGGER.info("Successfully resolved DataSource jdbc/sdr433DS via InitialContext lookup.");
+            return dataSource;
+        } catch (NamingException e) {
+            LOGGER.log(Level.SEVERE, "Failed to lookup DataSource jdbc/sdr433DS via JNDI", e);
+            return null;
+        }
+    }
+
     @PostConstruct
     public void initSchema() {
-        if (dataSource == null) {
+        DataSource ds = getDataSource();
+        if (ds == null) {
             LOGGER.severe("DataSource jdbc/sdr433DS is null!");
             return;
         }
@@ -39,7 +57,7 @@ public class ReadingDao {
                 "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
                 "PRIMARY KEY (model, id)" +
                 ")";
-        try (Connection conn = dataSource.getConnection();
+        try (Connection conn = ds.getConnection();
              Statement stmt = conn.createStatement()) {
             stmt.executeUpdate(sql);
             LOGGER.info("Initialized probe_names table successfully.");
@@ -51,13 +69,16 @@ public class ReadingDao {
     public List<ProbeInfo> getProbes() {
         initSchema();
         List<ProbeInfo> probes = new ArrayList<>();
+        DataSource ds = getDataSource();
+        if (ds == null) return probes;
+
         String sql = "SELECT r.model, r.id, MAX(r.channel) as channel, pn.custom_name, MAX(r.timestamp) as last_ts " +
                 "FROM all_readings r " +
                 "LEFT JOIN probe_names pn ON r.model = pn.model AND r.id = pn.id " +
                 "GROUP BY r.model, r.id, pn.custom_name " +
                 "ORDER BY last_ts DESC";
 
-        try (Connection conn = dataSource.getConnection();
+        try (Connection conn = ds.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
 
@@ -69,7 +90,6 @@ public class ReadingDao {
                 Timestamp ts = rs.getTimestamp("last_ts");
                 Instant instant = ts != null ? ts.toInstant() : null;
 
-                // Fetch latest temperature reading for this probe
                 Double latestTempF = getLatestTemperatureF(conn, model, id);
 
                 ProbeInfo probe = new ProbeInfo(model, id, channel, customName, instant, latestTempF);
@@ -83,12 +103,15 @@ public class ReadingDao {
 
     public void saveProbeName(String model, String id, String customName) {
         initSchema();
+        DataSource ds = getDataSource();
+        if (ds == null) return;
+
         String sql = "INSERT INTO probe_names (model, id, custom_name, updated_at) " +
                 "VALUES (?, ?, ?, NOW()) " +
                 "ON CONFLICT (model, id) " +
                 "DO UPDATE SET custom_name = EXCLUDED.custom_name, updated_at = NOW()";
 
-        try (Connection conn = dataSource.getConnection();
+        try (Connection conn = ds.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, model);
             ps.setString(2, id);
@@ -101,8 +124,11 @@ public class ReadingDao {
 
     public List<ReadingPoint> getReadings(String model, String id, int windowMinutes) {
         List<ReadingPoint> points = new ArrayList<>();
+        DataSource ds = getDataSource();
+        if (ds == null) return points;
+
         if (windowMinutes <= 0) {
-            windowMinutes = 60; // Default to 1 hour (60 mins)
+            windowMinutes = 60;
         }
 
         String sql = "SELECT timestamp, model, id, channel, reading " +
@@ -118,7 +144,7 @@ public class ReadingDao {
 
         sql += "ORDER BY timestamp ASC";
 
-        try (Connection conn = dataSource.getConnection();
+        try (Connection conn = ds.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             int paramIndex = 1;
@@ -192,7 +218,6 @@ public class ReadingDao {
         try (JsonReader reader = Json.createReader(new StringReader(jsonStr))) {
             JsonObject json = reader.readObject();
 
-            // Check Fahrenheit keys
             if (json.containsKey("temperature_F")) {
                 result.tempF = getDoubleVal(json, "temperature_F");
             } else if (json.containsKey("temperature_1_F")) {
@@ -203,7 +228,6 @@ public class ReadingDao {
                 result.tempF = getDoubleVal(json, "temp_F");
             }
 
-            // Check Celsius keys
             if (json.containsKey("temperature_C")) {
                 result.tempC = getDoubleVal(json, "temperature_C");
             } else if (json.containsKey("temperature_1_C")) {
@@ -214,12 +238,10 @@ public class ReadingDao {
                 result.tempC = getDoubleVal(json, "temp_C");
             }
 
-            // Convert C to F if F was missing but C was present
             if (result.tempF == null && result.tempC != null) {
                 result.tempF = Math.round(((result.tempC * 9.0 / 5.0) + 32.0) * 100.0) / 100.0;
             }
 
-            // Convert F to C if C was missing but F was present
             if (result.tempC == null && result.tempF != null) {
                 result.tempC = Math.round(((result.tempF - 32.0) * 5.0 / 9.0) * 100.0) / 100.0;
             }
