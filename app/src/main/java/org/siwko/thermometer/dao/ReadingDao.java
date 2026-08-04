@@ -190,14 +190,20 @@ public class ReadingDao {
     }
 
     private Double getLatestTemperatureF(Connection conn, String model, String id) {
-        String sql = "SELECT reading FROM all_readings WHERE model = ? AND id = ? ORDER BY timestamp DESC LIMIT 1";
+        if (model == null || id == null) {
+            return null;
+        }
+
+        String sql = "SELECT reading FROM all_readings WHERE model = ? AND id = ? ORDER BY timestamp DESC LIMIT 20";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, model);
             ps.setString(2, id);
             try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
+                while (rs.next()) {
                     ParsedReading parsed = parseReadingJson(rs.getString("reading"));
-                    return parsed.tempF;
+                    if (parsed.tempF != null) {
+                        return parsed.tempF;
+                    }
                 }
             }
         } catch (SQLException e) {
