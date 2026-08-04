@@ -13,17 +13,26 @@ pipeline {
 
     stages {
         stage('Build App Image') {
+            when {
+                changeset "app/**"
+            }
             steps {
                 sh "docker build --provenance=false --sbom=false --build-arg BUILD_NUMBER=${IMAGE_TAG} -f app/Dockerfile -t ${IMAGE}:${IMAGE_TAG} -t ${IMAGE}:latest app"
             }
         }
         stage('Push App Image') {
+            when {
+                changeset "app/**"
+            }
             steps {
                 sh "docker push ${IMAGE}:${IMAGE_TAG}"
                 sh "docker push ${IMAGE}:latest"
             }
         }
         stage('Deploy App to OpenLiberty Server') {
+            when {
+                changeset "app/**"
+            }
             steps {
                 sh "kubectl set image deployment/probe-server probe-app=${IMAGE}:${IMAGE_TAG} -n default"
                 sh "kubectl rollout status deployment/probe-server -n default --timeout=180s"

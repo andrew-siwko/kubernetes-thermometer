@@ -13,21 +13,39 @@ pipeline {
 
     stages {
         stage('Build Base Server') {
+            when {
+                anyOf {
+                    changeset "app-server/**"
+                    changeset "k8s/**"
+                }
+            }
             steps {
                 sh "docker build --provenance=false --sbom=false --build-arg BUILD_NUMBER=${IMAGE_TAG} -f app-server/Dockerfile -t ${IMAGE}:${IMAGE_TAG} -t ${IMAGE}:latest app-server"
             }
         }
         stage('Push Base Server') {
+            when {
+                anyOf {
+                    changeset "app-server/**"
+                    changeset "k8s/**"
+                }
+            }
             steps {
                 sh "docker push ${IMAGE}:${IMAGE_TAG}"
                 sh "docker push ${IMAGE}:latest"
             }
         }
         stage('Apply Manifests') {
+            when {
+                anyOf {
+                    changeset "app-server/**"
+                    changeset "k8s/**"
+                }
+            }
             steps {
                 sh "kubectl apply -f k8s/probe-service.yaml"
-                sh "kubectl apply -f k8s/probe-deployment.yaml"
                 sh "kubectl apply -f k8s/probe-ingress.yaml"
+                sh "kubectl apply -f k8s/probe-deployment.yaml"
                 sh "kubectl set image deployment/probe-server probe-server=${IMAGE}:${IMAGE_TAG} -n default"
                 sh "kubectl rollout status deployment/probe-server -n default --timeout=180s"
             }
