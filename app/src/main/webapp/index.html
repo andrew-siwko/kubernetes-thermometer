@@ -44,6 +44,9 @@
                 <button id="renameBtn" class="btn btn-secondary" title="Rename Probe">
                     ✏️ Rename Probe
                 </button>
+                <button id="manageProbesBtn" class="btn btn-secondary" title="Manage Named Probes">
+                    🛠️ Manage Named Probes
+                </button>
             </div>
 
             <div class="control-group">
@@ -110,6 +113,34 @@
                 <div class="modal-actions">
                     <button id="cancelRenameBtn" class="btn btn-secondary">Cancel</button>
                     <button id="saveRenameBtn" class="btn btn-primary">Save Name</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Manage Named Probes Modal -->
+        <div class="modal-overlay" id="manageProbesModal">
+            <div class="modal-card modal-card-wide">
+                <div class="modal-header">
+                    <div>
+                        <h3>Manage Named Probes</h3>
+                        <p class="modal-subtitle">Edit aliases for named probes and view their model, ID, and last reading age.</p>
+                    </div>
+                    <button id="closeManageBtn" class="btn btn-secondary">Close</button>
+                </div>
+                <div class="table-container">
+                    <table class="editor-table">
+                        <thead>
+                            <tr>
+                                <th>Probe Model</th>
+                                <th>Probe ID</th>
+                                <th>Alias</th>
+                                <th>Last Reading Age</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="manageProbesTableBody"></tbody>
+                    </table>
+                    <div id="manageProbesMessage" class="modal-message"></div>
                 </div>
             </div>
         </div>
