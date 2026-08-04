@@ -90,12 +90,15 @@ public class ReadingDao {
                 Timestamp ts = rs.getTimestamp("last_ts");
                 Instant instant = ts != null ? ts.toInstant() : null;
 
-                Double latestTempF = getLatestTemperatureF(conn, model, id);
-                if (latestTempF == null) {
+                ParsedReading latestProbe = getLatestProbeReading(conn, model, id);
+                if (latestProbe == null || latestProbe.tempF == null) {
                     continue; // skip probes with no temperature readings
                 }
+                if (latestProbe.type != null && "TPMS".equalsIgnoreCase(latestProbe.type.trim())) {
+                    continue; // ignore TPMS probes
+                }
 
-                ProbeInfo probe = new ProbeInfo(model, id, channel, customName, instant, latestTempF);
+                ProbeInfo probe = new ProbeInfo(model, id, channel, customName, instant, latestProbe.tempF);
                 probes.add(probe);
             }
         } catch (SQLException e) {
@@ -189,7 +192,7 @@ public class ReadingDao {
         return points;
     }
 
-    private Double getLatestTemperatureF(Connection conn, String model, String id) {
+    private ParsedReading getLatestProbeReading(Connection conn, String model, String id) {
         if (model == null || id == null) {
             return null;
         }
@@ -202,12 +205,12 @@ public class ReadingDao {
                 while (rs.next()) {
                     ParsedReading parsed = parseReadingJson(rs.getString("reading"));
                     if (parsed.tempF != null) {
-                        return parsed.tempF;
+                        return parsed;
                     }
                 }
             }
         } catch (SQLException e) {
-            LOGGER.log(Level.FINE, "Could not fetch latest temp for " + model + " / " + id, e);
+            LOGGER.log(Level.FINE, "Could not fetch latest probe reading for " + model + " / " + id, e);
         }
         return null;
     }
@@ -216,6 +219,7 @@ public class ReadingDao {
         Double tempF;
         Double tempC;
         Double humidity;
+        String type;
     }
 
     private ParsedReading parseReadingJson(String jsonStr) {
@@ -258,11 +262,32 @@ public class ReadingDao {
             if (json.containsKey("humidity")) {
                 result.humidity = getDoubleVal(json, "humidity");
             }
+
+            if (json.containsKey("type")) {
+                result.type = getStringVal(json, "type");
+            } else if (json.containsKey("sensor_type")) {
+                result.type = getStringVal(json, "sensor_type");
+            } else if (json.containsKey("probe_type")) {
+                result.type = getStringVal(json, "probe_type");
+            }
         } catch (Exception e) {
             LOGGER.log(Level.FINE, "Failed to parse reading JSON: " + jsonStr, e);
         }
 
         return result;
+    }
+
+    private String getStringVal(JsonObject json, String key) {
+        try {
+            if (json.isNull(key)) return null;
+            return json.getString(key);
+        } catch (Exception e) {
+            try {
+                return json.get(key).toString();
+            } catch (Exception ex) {
+                return null;
+            }
+        }
     }
 
     private Double getDoubleVal(JsonObject json, String key) {
