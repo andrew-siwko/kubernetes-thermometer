@@ -91,6 +91,9 @@ public class ReadingDao {
                 Instant instant = ts != null ? ts.toInstant() : null;
 
                 Double latestTempF = getLatestTemperatureF(conn, model, id);
+                if (latestTempF == null) {
+                    continue; // skip probes with no temperature readings
+                }
 
                 ProbeInfo probe = new ProbeInfo(model, id, channel, customName, instant, latestTempF);
                 probes.add(probe);
