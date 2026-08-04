@@ -76,6 +76,7 @@ public class ReadingDao {
                 "FROM all_readings r " +
                 "LEFT JOIN probe_names pn ON r.model = pn.model AND r.id = pn.id " +
                 "GROUP BY r.model, r.id, pn.custom_name " +
+                "HAVING MAX(r.timestamp) >= NOW() - INTERVAL '24 hours' " +
                 "ORDER BY last_ts DESC";
 
         try (Connection conn = ds.getConnection();
