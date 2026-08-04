@@ -323,23 +323,74 @@ body {
     padding: 1.75rem;
 }
 
-.modal-card h3 {
-    margin-bottom: 0.25rem;
-}
+    .modal-card.modal-card-wide {
+        max-width: 900px;
+    }
 
-.modal-subtitle {
-    font-size: 0.85rem;
-    color: var(--text-secondary);
-    margin-bottom: 1.25rem;
-}
+    .modal-card h3 {
+        margin-bottom: 0.25rem;
+    }
 
-.form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    margin-bottom: 1.5rem;
-}
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
 
+    .modal-subtitle {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        margin-bottom: 1.25rem;
+    }
+
+    .table-container {
+        overflow-x: auto;
+    }
+
+    .editor-table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 680px;
+    }
+
+    .editor-table th,
+    .editor-table td {
+        padding: 0.85rem 0.9rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        text-align: left;
+        color: var(--text-primary);
+        font-size: 0.94rem;
+    }
+
+    .editor-table th {
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 600;
+        font-size: 0.75rem;
+    }
+
+    .editor-table input {
+        width: 100%;
+        background: #0f172a;
+        border: 1px solid var(--card-border);
+        border-radius: 10px;
+        padding: 0.55rem 0.75rem;
+        color: var(--text-primary);
+        font-family: var(--font-main);
+    }
+
+    .btn-small {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.8rem;
+    }
+
+    .modal-message {
+        margin-top: 1rem;
+        font-size: 0.9rem;
+        color: var(--accent-emerald);
 .form-group input {
     background: #0f172a;
     border: 1px solid var(--card-border);
