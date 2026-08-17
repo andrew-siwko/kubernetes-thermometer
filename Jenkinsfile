@@ -37,7 +37,7 @@ pipeline {
                 sh "kubectl apply -f k8s/probe-ingress.yaml"
                 sh "kubectl apply -f k8s/probe-deployment.yaml"
                 sh "kubectl set image deployment/probe-server probe-server=${SERVER_IMAGE}:${IMAGE_TAG} probe-app=${APP_IMAGE}:${IMAGE_TAG} -n default"
-                sh "kubectl rollout status deployment/probe-server -n default --timeout=180s"
+                sh "kubectl rollout status deployment/probe-server -n default --timeout=4m"
             }
         }
     }
